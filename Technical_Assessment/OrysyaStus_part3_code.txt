@@ -1,0 +1,61 @@
+# Code was run using R
+setwd("C:/Users/Orysya/Desktop")
+train = read.csv("./A.csv")
+test = read.csv("./B.csv")
+lr_model <- glm(formula = is_registered_democrat~age+voted_in_2012+adult+hh_income+is_urban+is_owner_of_home, data = train, family = binomial)
+lr_model
+summary(lr_model)
+anova(lr_model, test="Chisq")
+#for individual probabilities
+result <- predict(lr_model, test, type="response" )
+result
+#for standard errors
+result1 <- predict(lr_model, test, type="link", se=TRUE)
+result1
+write.csv(result, "C:/Users/Orysya/Desktop/result.csv")
+
+# Code was run using Python
+# PART 3
+# Please build a model that produces an individual level prediction of a person’s probability to register as a Democrat. In Dataset C, approximately the first 10,000 individuals have known registration status while for the approximately other 10,000 individuals, registration is unknown. 
+# Create a complete file with all data included
+registration_status = pd.read_csv("C:/Users/Orysya/Desktop/Civis_Analytics_Assessment/registration_status.csv")
+individual_editted = pd.read_csv("C:/Users/Orysya/Desktop/Civis_Analytics_Assessment/individual_editted.csv")
+merge = pd.merge(individual_editted, household, how='inner', on='hh_id')
+all_data = pd.merge(merge, registration_status, how='inner', on="person_id")
+all_data.to_csv("C:/Users/Orysya/Desktop/all_data.csv")
+
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import matplotlib.pyplot as plt
+from patsy import dmatrices
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import train_test_split
+from sklearn import metrics
+from sklearn.cross_validation import cross_val_score
+
+# Create a dataframe with an intercept column
+y, X = dmatrices('is_registered_democrat ~ race + voted_in_2012 + adult + hh_type + is_uban + is_owner_of_home + tercile_of_census_tract_income', all_data, return_type="dataframe")
+# flatten y into 1-D array
+y = np.ravel(y)
+
+# evaluate the model by splitting it into training and testing data sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=1)
+model2 = LogisticRegression()
+model2.fit(X_train, y_train)
+
+# predict class labels for the test data set
+predicted = model2.predict(X_test)
+predicted
+
+# generate class probabilites
+probs = model2.predict_proba(X_test)
+probs
+#The classifier is predicting 1 (is_registered_democrat) when probability in second column > 0.5
+
+print metrics.accuracy_score(y_test, predicted)
+print metrics.roc_auc_score(y_test, probs[:, 1])
+# model classified is_registered_democrat = 1 with low accuracy, there is a need to choose the variables better
+
+print metrics.confusion_matrix(y_test, predicted)
+print metrics.classification_report(y_test, predicted)

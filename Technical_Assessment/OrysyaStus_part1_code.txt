@@ -1,0 +1,133 @@
+# Code was run within ipython notebook
+
+#PART 1
+import numpy as np
+import pandas as pd
+
+individual = pd.read_csv("C:/Users/Orysya/Desktop/Civis_Analytics_Assessment/individual_data.csv")
+household = pd.read_csv("C:/Users/Orysya/Desktop/Civis_Analytics_Assessment/household_data.csv")
+
+individual.head()
+
+#1. Binary attribute: 1 for adult, 0 for child
+def adult(row):
+    if row['age'] < 18:
+        return 0
+    else:
+        return 1
+individual['adult'] = individual.apply(adult, axis=1)
+
+#1. What percent of the sample is adults?
+adult_percentage = (float(individual['adult'][individual['adult'] == 1].count()) / float(individual['adult'].count())) * 100.00
+print 'Adults make up', format(adult_percentage, '.2f'),'% of the entire sample'
+
+# 2. Average number of adults per household?
+A = individual[individual['adult'] == 1].groupby('hh_id')['adult'].count() #Provides count of adults for each hh_id
+B = individual['hh_id'].nunique() #Provides count of unique number of households
+average_adults_per_household = float(sum(A))/B
+print 'The average number of adults per household is', format(average_adults_per_household, '.2f')
+
+# 2. Average number of children per household?
+A = individual[individual['adult'] == 0].groupby('hh_id')['adult'].count() #Provides count of children for each hh_id
+B = individual['hh_id'].nunique() #Provides count of unique number of households
+average_children_per_household = float(sum(A))/B
+print 'The average number of children per household is', format(average_children_per_household, '.2f')
+
+# 3. What percent of adults are college graduates?
+A = individual[individual['adult'] == 1].groupby('is_college_graduate')['adult'].count()
+B = individual['adult'][individual['adult'] == 1].count()
+adults_college_graduates = (float(A[1])/float(B)) * 100.00
+print 'The percent of adults who are college graduate is', format(adults_college_graduates, '.2f'), '%'
+
+# 3. What percentage of people are college graduates?
+collegegraduate_percentage = (float(individual['is_college_graduate'][individual['is_college_graduate'] == 1].count()) / float(individual['is_college_graduate'].count())) * 100.00
+print 'The percent of people (including children) who are college graduates is', format(collegegraduate_percentage, '.2f'), '%'
+
+# 3. Do you find coding of this variable (college graduates) reliable?
+print 'By comparing the variables adults_college_graduates and collegegradaute_percentage, the variable is_college_graduate should is not reliable since it is expected that collegegraduate_percentage < adults_college_graduates, but examination of the dataset shows that non-adults were shown to be college graduates, which does not make sense'
+
+# 4. Create a variable that indicates the type of household (hh_type): “single male head of household,” “single female head of household,” “married couple,” or “unmarried couple.” 
+individual['gender'] = individual['gender'].replace({'.*[fF].*': 'Female'}, regex=True)
+individual['gender'] = individual['gender'].replace({'.*[M].*': 'Male'}, regex=True)
+# Unmarried_couple logic
+A = individual[individual['married'] == 'Single'].groupby('hh_id')['married'].count() #groupby hh_id, count of single marriage status
+B = individual[individual['adult'] == 1].groupby('hh_id')['adult'].count() #groupby hh_id, count of adult status
+logical = ((A > 1) & (B > 1))
+key = list(logical.index)
+values = list(logical)
+dic_uc = dict(zip(key, values))
+for i, j in dic_uc.items():
+    if j == True:
+        dic_uc[i] = 'unmarried_couple'
+    else:
+        del dic_uc[i]
+dic_uc
+A_dic_uc = list(dic_uc.keys())
+global A_dic_uc
+# Married_couple logic
+C = individual[individual['married'] == 'Married'].groupby('hh_id')['married'].count()
+logical = (C > 1)
+key = list(logical.index)
+values = list(logical)
+dic_mc = dict(zip(key, values))
+for i, j in dic_mc.items():
+    if j == True:
+        dic_mc[i] = 'married_couple'
+    else:
+        del dic_mc[i]
+dic_mc
+B_dic_mc = list(dic_mc.keys())
+global B_dic_mc
+# Single logic - determines if the head of household is not in a relationship
+B = individual[individual['adult'] == 1].groupby('hh_id')['adult'].count() #groupby hh_id, count of adult status
+logical = (B == 1)
+key = list(logical.index)
+values = list(logical)
+dic_s = dict(zip(key, values))
+for i, j in dic_s.items():
+    if j == True:
+        dic_s[i] = 'single'
+    else:
+        del dic_s[i]
+C_dic_s = list(dic_s.keys())
+global C_dic_s
+# Find gender for each head of household
+B = individual[individual['is_head_of_household'] == 1]
+key = list(B['hh_id'])
+value = list(B['gender'])
+dic_in = dict(zip(key, value))
+global dic_in
+# Creates new variables, hh_type describing type of household
+def hh_type(row):
+    global B_dic_mc #dictionary keys to indicate which households belong to married couples
+    global A_dic_uc #dictionary keys to indicate which households belong to unmarried couples
+    global C_dic_s #dictionary keys to indicate which households belong to single couples
+    global dic_in #dictionary to indicate keys & associated gender values for each hh_id, will be passed within function
+    if row['hh_id'] in B_dic_mc:
+        return 'married_couple'
+    elif row['hh_id'] in A_dic_uc:
+        return 'unmarried_couple'
+    elif row['hh_id'] in C_dic_s:
+        return 'single_{0}_head_of_household'.format(dic_in[row['hh_id']])
+individual['hh_type'] = individual.apply(hh_type, axis=1)
+individual
+
+# What percent of households are of each type?
+A = ((individual.groupby('hh_type').hh_id.nunique())/10000) *100.00
+print 'Married couples make up', A[0], '%, single female head of households make up', A[1], '%, single male head of households make up', A[2], '%,and unmarried couples make up', A[3], '% of the total households.'
+individual.to_csv("C:/Users/Orysya/Desktop/individual_editted.csv")
+
+#PART 2
+A = individual[['hh_id', 'hh_type', 'race']]
+subset = A.drop_duplicates(subset=['hh_id', 'hh_type', 'race'])
+subset.to_csv("C:/Users/Orysya/Desktop/socio_info.csv", index=False)
+
+socio_economic.head()
+
+socio_economic = pd.merge(household, subset, how='inner', on='hh_id')
+A = socio_economic.groupby(['hh_type', 'race', 'tercile_of_census_tract_income'])
+A['hh_income'].describe()
+
+A['is_urban'].value_counts()
+
+A['is_owner_of_home'].value_counts()
