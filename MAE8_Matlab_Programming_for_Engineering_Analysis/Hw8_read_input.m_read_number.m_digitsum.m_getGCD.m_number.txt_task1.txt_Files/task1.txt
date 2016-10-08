@@ -1,0 +1,10 @@
+# Parameters for Task 1 in the following order from left to right:
+# Trajectory number
+# Initial position (m): Xo, Yo, Zo
+# Initial velocity (m/s) and direction (degree): Umag, theta, phi
+# Coefficient of friction: C
+1	0.0	0.0	0.0	40.0	0.0	45.0	0.0
+2	0.0	0.0	0.0	40.0	90.0	45.0	0.0
+3	5.0	5.0	5.0	40.0	30.0	45.0	0.0
+4	5.0	5.0	5.0 	40.0	60.0	45.0	0.0
+	

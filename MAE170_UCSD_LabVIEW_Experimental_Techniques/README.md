@@ -1,0 +1,2 @@
+# MAE170_UCSD_LabVIEW_Experimental_Techniques
+Principles and practice of measurement and control and the design and conduct of experiments. Technical report writing. Lectures relate to dimensional analysis, error analysis, signal-to-noise problems, filtering, data acquisition and data reduction, as well as background of experiments and statistical analysis. Experiments relate to the use of electronic devices and sensors.
